@@ -2,6 +2,24 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
+
+# Date column names (canonical vs legacy)
+CANONICAL_DATE = 'Date (YYYY-MM-DD)'
+LEGACY_DATE = 'Date (MM/DD/YYYY)'
+
+
+def _choose_date_col(df):
+    """Return the preferred date column name present in df.
+
+    Prefers CANONICAL_DATE and falls back to LEGACY_DATE for backward compatibility.
+    Raises KeyError if neither is present.
+    """
+    if CANONICAL_DATE in df.columns:
+        return CANONICAL_DATE
+    if LEGACY_DATE in df.columns:
+        return LEGACY_DATE
+    raise KeyError(f"No date column found. Expected '{CANONICAL_DATE}' or '{LEGACY_DATE}'")
+
 def remove_invalid_rows(df):
     """
     Remove rows where MOST critical columns are missing (specifically the 11 problematic rows)
@@ -20,9 +38,21 @@ def remove_invalid_rows(df):
     
     # Define the critical columns that identify problematic rows
     # These are the columns that are missing in those 11 rows
+    # Choose which date column is present (prefer canonical, fall back to legacy)
+    date_col = None
+    if 'Date (YYYY-MM-DD)' in df.columns:
+        date_col = 'Date (YYYY-MM-DD)'
+    elif 'Date (MM/DD/YYYY)' in df.columns:
+        date_col = 'Date (MM/DD/YYYY)'
+
     critical_cols = [
         'Flight Number',
-        'Date (MM/DD/YYYY)',
+    ]
+
+    if date_col:
+        critical_cols.append(date_col)
+
+    critical_cols += [
         'Origin Airport',
         'Scheduled Arrival Time',
         'Actual Arrival Time',
@@ -37,9 +67,10 @@ def remove_invalid_rows(df):
         'Delay Security (Minutes)',
         'Delay Late Aircraft Arrival (Minutes)'
     ]
-    
-    # Count how many critical columns are missing per row
-    missing_count = df[critical_cols].isna().sum(axis=1)
+
+    # Count how many critical columns are missing per row. Use reindex so missing
+    # columns (if any) appear as NaN instead of raising KeyError.
+    missing_count = df.reindex(columns=critical_cols).isna().sum(axis=1)
     
     # Remove rows where more than 10 critical columns are missing
     # (the 11 problematic rows have all 15 critical columns missing)
@@ -149,11 +180,13 @@ def validate_data_types(df):
     df = df.copy()
     changes_made = 0
     
-    # Ensure Date column is datetime
-    if 'Date (MM/DD/YYYY)' in df.columns:
-        if not pd.api.types.is_datetime64_any_dtype(df['Date (MM/DD/YYYY)']):
-            df['Date (MM/DD/YYYY)'] = pd.to_datetime(df['Date (MM/DD/YYYY)'], errors='coerce')
-            print("✓ Converted 'Date (MM/DD/YYYY)' to datetime")
+    # Ensure Date column is datetime (prefer canonical name)
+    date_col = _choose_date_col(df)
+
+    if date_col in df.columns:
+        if not pd.api.types.is_datetime64_any_dtype(df[date_col]):
+            df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
+            print(f"✓ Converted '{date_col}' to datetime")
             changes_made += 1
     
     # Ensure numeric columns are numeric (with nullable integer support)
@@ -324,18 +357,21 @@ def filter_by_date_range(df, start_date=None, end_date=None):
     df = df.copy()
     initial_len = len(df)
     
-    if 'Date (MM/DD/YYYY)' not in df.columns:
+    # Determine which date column to use
+    try:
+        date_col = _choose_date_col(df)
+    except KeyError:
         print("⚠ Date column not found, skipping date filter")
         return df
-    
+
     if start_date:
         start_date = pd.to_datetime(start_date)
-        df = df[df['Date (MM/DD/YYYY)'] >= start_date]
+        df = df[df[date_col] >= start_date]
         print(f"✓ Filtered from: {start_date.date()}")
-    
+
     if end_date:
         end_date = pd.to_datetime(end_date)
-        df = df[df['Date (MM/DD/YYYY)'] <= end_date]
+        df = df[df[date_col] <= end_date]
         print(f"✓ Filtered to: {end_date.date()}")
     
     removed = initial_len - len(df)
@@ -375,6 +411,26 @@ def preprocessing_pipeline(input_path, output_path,
     print(f"\nLoading data from: {input_path}")
     df = pd.read_csv(input_path)
     print(f"✓ Loaded {len(df):,} rows, {len(df.columns)} columns")
+    # --- Ensure canonical date column exists in-memory (do NOT modify files on disk) ---
+    # If the CSV still contains the legacy header, convert it to the canonical
+    # name and drop the legacy header. Otherwise ensure the canonical column is
+    # parsed as datetime.
+    if 'Date (MM/DD/YYYY)' in df.columns:
+        df[CANONICAL_DATE] = pd.to_datetime(df['Date (MM/DD/YYYY)'], errors='coerce')
+        df = df.drop(columns=['Date (MM/DD/YYYY)'])
+        print(f"✓ Created in-memory canonical date column '{CANONICAL_DATE}' from legacy header and dropped legacy column")
+    elif CANONICAL_DATE in df.columns:
+        df[CANONICAL_DATE] = pd.to_datetime(df[CANONICAL_DATE], errors='coerce')
+
+    # Move canonical date column to second position for consistency with eda_utils
+    if CANONICAL_DATE in df.columns:
+        cols = list(df.columns)
+        if cols[1] != CANONICAL_DATE:
+            cols = [c for c in cols if c != CANONICAL_DATE]
+            cols.insert(1, CANONICAL_DATE)
+            df = df.loc[:, cols]
+            print(f"✓ Moved '{CANONICAL_DATE}' to column position 2 (in-memory)")
+    # ------------------------------------------------------------------------------
     
     # Step 1: Remove invalid rows
     if remove_invalid:

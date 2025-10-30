@@ -4,6 +4,11 @@ from pathlib import Path
 from sklearn.preprocessing import LabelEncoder
 
 
+# Canonical date column used throughout the codebase.
+# `eda_utils.load_data()` is responsible for creating this column in-memory.
+CANONICAL_DATE = 'Date (YYYY-MM-DD)'
+
+
 def create_basic_features(df):
     """
     Create only essential features: IsWeekend, Is_Holiday_Period, Season, Is_Delayed
@@ -17,51 +22,51 @@ def create_basic_features(df):
     print("\n" + "=" * 60)
     print("CREATING BASIC FEATURES")
     print("=" * 60)
-    
-    df = df.copy()
-    
-    # Ensure Date is datetime
-    if not pd.api.types.is_datetime64_any_dtype(df['Date (MM/DD/YYYY)']):
-        df['Date (MM/DD/YYYY)'] = pd.to_datetime(df['Date (MM/DD/YYYY)'])
-    
-    # Extract Month and Day for feature creation
-    df['Month'] = df['Date (MM/DD/YYYY)'].dt.month
-    df['Day'] = df['Date (MM/DD/YYYY)'].dt.day
-    df['DayOfWeek'] = df['Date (MM/DD/YYYY)'].dt.dayofweek  # 0=Monday, 6=Sunday
+
+    # Expect the canonical date column created by eda_utils.load_data()
+    date_col = CANONICAL_DATE
+    if date_col not in df.columns:
+        raise KeyError(
+            f"Expected column '{CANONICAL_DATE}' in DataFrame. "
+            "Ensure you loaded the data via eda_utils.load_data() which creates the canonical date column."
+        )
+    # Ensure date column is datetime (coerce invalids to NaT)
+    if not pd.api.types.is_datetime64_any_dtype(df[date_col]):
+        df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
+
+    df['Month'] = df[date_col].dt.month
+    df['Day'] = df[date_col].dt.day
+    df['DayOfWeek'] = df[date_col].dt.dayofweek  # 0=Monday, 6=Sunday
     
     # 1. IsWeekend
     df['IsWeekend'] = (df['DayOfWeek'] >= 5).astype(int)
     print("✓ Created IsWeekend")
     
-    # 2. Is_Holiday_Period
-    def is_holiday(month, day):
-        if month == 11 and 22 <= day <= 28:  # Thanksgiving
-            return 1
-        elif (month == 12 and day >= 20) or (month == 1 and day <= 5):  # Christmas/New Year
-            return 1
-        elif month == 7 and 1 <= day <= 7:  # July 4th
-            return 1
-        elif month == 5 and day >= 25:  # Memorial Day
-            return 1
-        elif month == 9 and 1 <= day <= 7:  # Labor Day
-            return 1
-        return 0
-    
-    df['Is_Holiday_Period'] = df.apply(lambda x: is_holiday(x['Month'], x['Day']), axis=1)
+    # 2. Is_Holiday_Period (vectorized)
+    # Create boolean masks for known holiday windows and combine them.
+    # This avoids an expensive row-wise apply and uses vectorized operations.
+    m = df['Month']
+    d = df['Day']
+
+    mask_thanksgiving = (m == 11) & (d.between(22, 28))
+    mask_christmas_newyear = ((m == 12) & (d >= 20)) | ((m == 1) & (d <= 5))
+    mask_july4 = (m == 7) & (d.between(1, 7))
+    mask_memorial = (m == 5) & (d >= 25)
+    mask_labor = (m == 9) & (d.between(1, 7))
+
+    df['Is_Holiday_Period'] = (
+        mask_thanksgiving
+        | mask_christmas_newyear
+        | mask_july4
+        | mask_memorial
+        | mask_labor
+    ).astype(int)
     print("✓ Created Is_Holiday_Period")
-    
-    # 3. Season
-    def get_season(month):
-        if month in [12, 1, 2]:
-            return 'Winter'
-        elif month in [3, 4, 5]:
-            return 'Spring'
-        elif month in [6, 7, 8]:
-            return 'Summer'
-        else:
-            return 'Fall'
-    
-    df['Season'] = df['Month'].apply(get_season)
+
+    # 3. Season (vectorized)
+    conditions = [m.isin([12, 1, 2]), m.isin([3, 4, 5]), m.isin([6, 7, 8])]
+    choices = ['Winter', 'Spring', 'Summer']
+    df['Season'] = np.select(conditions, choices, default='Fall')
     print("✓ Created Season")
     
     # 4. Is_Delayed (binary: >15 minutes)
@@ -151,7 +156,8 @@ def select_features_for_modeling(df):
         # Identifiers, too specific so exclude
         'Tail Number',
         'Flight Number',
-        'Date (MM/DD/YYYY)',
+        'Date (YYYY-MM-DD)',
+        # 'Date (MM/DD/YYYY)',
         
         # Time strings
         'Scheduled Arrival Time',

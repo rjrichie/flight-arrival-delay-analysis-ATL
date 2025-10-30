@@ -51,8 +51,41 @@ def load_data(file_path='data/processed/flight_delays_combined.csv', nrows=None)
         low_memory=False
     )
     
-    # Parse the full date column
-    df['Date (MM/DD/YYYY)'] = pd.to_datetime(df['Date (MM/DD/YYYY)'], format='%m/%d/%Y', errors='coerce')
+    # Normalize date columns and create a single canonical datetime column
+    # New canonical column name: 'Date (YYYY-MM-DD)'
+    # The source CSVs use 'Date (MM/DD/YYYY)'.
+    if 'Date (MM/DD/YYYY)' in df.columns:
+        src = 'Date (MM/DD/YYYY)'
+        parsed = pd.to_datetime(df[src], format='%m/%d/%Y', errors='coerce')
+    # elif 'Date (YYYY-MM-DD)' in df.columns:
+    #     src = 'Date (YYYY-MM-DD)'
+    #     parsed = pd.to_datetime(df[src], errors='coerce')
+    else:
+        parsed = pd.Series([pd.NaT] * len(df), index=df.index, dtype='datetime64[ns]')
+
+
+    df['Date (YYYY-MM-DD)'] = parsed
+    if 'Date (MM/DD/YYYY)' in df.columns:
+        try:
+            df = df.drop(columns=['Date (MM/DD/YYYY)'])
+            print("✓ Dropped column 'Date (MM/DD/YYYY)', using 'Date (YYYY-MM-DD)'")
+        except Exception:
+            pass
+
+    # Move canonical date column to the second position for convenience
+    # (index 1, keeping original first column ordering otherwise).
+    date_col = 'Date (YYYY-MM-DD)'
+    if date_col in df.columns:
+        cols = list(df.columns)
+        try:
+            cols.remove(date_col)
+            # Insert at position 1 (second column)
+            cols.insert(1, date_col)
+            df = df.loc[:, cols]
+            print(f"✓ Moved '{date_col}' to column position 2 (in-memory)")
+        except Exception:
+            # If something goes wrong, leave original ordering
+            pass
     
     # Memory usage info
     print(f"✓ Loaded {len(df):,} rows and {len(df.columns)} columns")

@@ -96,6 +96,10 @@ def extract_and_process_flight_data(zip_path='Dataset_BTS.zip',
     combined_df = pd.concat(combined_data, ignore_index=True)
     
     output_file = processed_path / 'flight_delays_combined.csv'
+
+    # Do NOT modify original CSV files on disk here. Save the combined data
+    # exactly as read from source CSVs. Any canonicalization of date columns
+    # should be done in-memory via pandas (e.g. in `load_data()`).
     combined_df.to_csv(output_file, index=False)
     
     print("=" * 60)

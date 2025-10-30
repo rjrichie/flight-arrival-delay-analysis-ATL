@@ -140,14 +140,20 @@ def select_features_for_modeling(df):
     
     # Features to EXCLUDE
     exclude_features = [
-        # Target
+        # Targets (for regression and classification)
         'Arrival Delay (Minutes)',
+        'Is_Delayed',  # Classification target
         
         # Target leakage (known only after flight)
         'Actual Arrival Time',
         'Actual Elapsed Time (Minutes)',
         'Wheels-on Time',
         'Taxi-In time (Minutes)',
+        'Delay Carrier (Minutes)',
+        'Delay Weather (Minutes)',
+        'Delay National Aviation System (Minutes)',
+        'Delay Security (Minutes)',
+        'Delay Late Aircraft Arrival (Minutes)',
         
         # Original categorical (already encoded)
         'Origin Airport',
@@ -214,15 +220,24 @@ def feature_engineering_pipeline(input_path, output_path):
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
-    df_encoded.to_csv(output_path, index=False)
+    # Save: Date + Features + Targets (Arrival Delay, Is_Delayed)
+    # Order: Date first, then all features, then regression target, then classification target
+    cols_to_save = ['Date (YYYY-MM-DD)'] + feature_cols + ['Arrival Delay (Minutes)', 'Is_Delayed']
+    df_to_save = df_encoded[cols_to_save]
+    
+    df_to_save.to_csv(output_path, index=False)
     print(f"✓ Saved to: {output_path}")
-    print(f"✓ Shape: {df_encoded.shape}")
+    print(f"✓ Shape: {df_to_save.shape}")
+    print(f"✓ Column order: 1 date + {len(feature_cols)} features + 2 targets")
+    print(f"  - Features: {len(feature_cols)}")
+    print(f"  - Regression target: Arrival Delay (Minutes)")
+    print(f"  - Classification target: Is_Delayed")
     
     print("\n" + "=" * 80)
     print("✓ FEATURE ENGINEERING COMPLETE")
     print("=" * 80)
     
-    return df_encoded, feature_cols, label_encoders
+    return df_to_save, feature_cols, label_encoders
 
 
 # Example usage

@@ -115,102 +115,97 @@ def tune_logistic_regression_hyperparams(X_train, y_train, cv=5, n_jobs=-1, verb
     return grid_search.best_estimator_, grid_search.best_params_
 
 
-def evaluate_classifier(model, X_test, y_test, X_train=None, y_train=None, threshold=0.5):
+
+def evaluate_classifier(model, X_test, y_test, X_train=None, y_train=None, threshold=0.5, target_names=None):
     """
-    Evaluate the classifier on the test set.
+    Evaluate a classifier on training and test data.
+    Handles imbalanced data safely and avoids metric warnings.
+    
+    Args:
+        model: Trained classifier (must implement predict() and predict_proba()).
+        X_train, y_train: Optional, for evaluating training performance.
+        X_test, y_test: Required, test set.
+        threshold: Decision threshold for positive class (default 0.5).
+        target_names: Optional list of class labels for report.
     """
     print("\n" + "=" * 60)
-    print("CLASSIFIER EVALUATION (LOGISTIC REGRESSION)")
+    print(f"CLASSIFIER EVALUATION ({type(model).__name__})")
     print("=" * 60)
-    """
-    # Predict probabilities (needed for ROC AUC)
-    y_test_proba = model.predict_proba(X_test)[:, 1]
-    
-    # Predict classes using the standard threshold
-    y_test_pred = (y_test_proba >= threshold).astype(int)
-    
-    # --- Test Metrics ---
-    test_accuracy = accuracy_score(y_test, y_test_pred)
-    test_precision = precision_score(y_test, y_test_pred, zero_division=0)
-    test_recall = recall_score(y_test, y_test_pred, zero_division=0)
-    test_f1 = f1_score(y_test, y_test_pred, zero_division=0)
-    test_roc_auc = roc_auc_score(y_test, y_test_proba)
-    cm = confusion_matrix(y_test, y_test_pred)
 
-    print(f"Test Accuracy: {test_accuracy:.4f}")
-    print(f"Test Precision: {test_precision:.4f}")
-    print(f"Test Recall: {test_recall:.4f}")
-    print(f"Test F1-Score: {test_f1:.4f}")
-    print(f"Test ROC AUC: {test_roc_auc:.4f}")
-    
-    metrics = {
-        'test_accuracy': test_accuracy,
-        'test_precision': test_precision,
-        'test_recall': test_recall,
-        'test_f1': test_f1,
-        'test_roc_auc': test_roc_auc,
-        'confusion_matrix': cm,
-        'y_test_pred': y_test_pred,
-        'y_test_proba': y_test_proba
+    # -----------------------------
+    # Get predictions
+    # -----------------------------
+    if hasattr(model, "predict_proba"):
+        y_test_proba = model.predict_proba(X_test)[:, 1]
+        y_test_pred = (y_test_proba >= threshold).astype(int)
+    else:
+        y_test_proba = None
+        y_test_pred = model.predict(X_test)
+
+    # -----------------------------
+    # Training performance (optional)
+    # -----------------------------
+    if X_train is not None and y_train is not None:
+        y_train_pred = model.predict(X_train)
+        train_metrics = {
+            "accuracy": accuracy_score(y_train, y_train_pred),
+            "precision": precision_score(y_train, y_train_pred, zero_division=0),
+            "recall": recall_score(y_train, y_train_pred, zero_division=0),
+            "f1": f1_score(y_train, y_train_pred, zero_division=0)
+        }
+
+        print("\nTraining Set Performance:")
+        for k, v in train_metrics.items():
+            print(f"  {k.capitalize():<10}: {v:.4f}")
+    else:
+        train_metrics = {}
+
+    # -----------------------------
+    # Test performance
+    # -----------------------------
+    test_metrics = {
+        "accuracy": accuracy_score(y_test, y_test_pred),
+        "precision": precision_score(y_test, y_test_pred, zero_division=0),
+        "recall": recall_score(y_test, y_test_pred, zero_division=0),
+        "f1": f1_score(y_test, y_test_pred, zero_division=0)
     }
-    
-    return metrics
-    """
-    # Predictions
-    y_train_pred = model.predict(X_train)
-    y_test_pred = model.predict(X_test)
-    y_test_proba = model.predict_proba(X_test)[:, 1]
-    
-    # Training metrics
-    train_accuracy = accuracy_score(y_train, y_train_pred)
-    train_precision = precision_score(y_train, y_train_pred)
-    train_recall = recall_score(y_train, y_train_pred)
-    train_f1 = f1_score(y_train, y_train_pred)
-    
-    # Test metrics
-    test_accuracy = accuracy_score(y_test, y_test_pred)
-    test_precision = precision_score(y_test, y_test_pred)
-    test_recall = recall_score(y_test, y_test_pred)
-    test_f1 = f1_score(y_test, y_test_pred)
-    test_roc_auc = roc_auc_score(y_test, y_test_proba)
-    
-    print("\nTraining Set Performance:")
-    print(f"  Accuracy:  {train_accuracy:.4f}")
-    print(f"  Precision: {train_precision:.4f}")
-    print(f"  Recall:    {train_recall:.4f}")
-    print(f"  F1-Score:  {train_f1:.4f}")
-    
+
+    if y_test_proba is not None:
+        try:
+            test_metrics["roc_auc"] = roc_auc_score(y_test, y_test_proba)
+        except ValueError:
+            test_metrics["roc_auc"] = np.nan  # Handle edge case with single class in test
+    else:
+        test_metrics["roc_auc"] = np.nan
+
     print("\nTest Set Performance:")
-    print(f"  Accuracy:  {test_accuracy:.4f}")
-    print(f"  Precision: {test_precision:.4f}")
-    print(f"  Recall:    {test_recall:.4f}")
-    print(f"  F1-Score:  {test_f1:.4f}")
-    print(f"  ROC-AUC:   {test_roc_auc:.4f}")
-    
+    for k, v in test_metrics.items():
+        print(f"  {k.capitalize():<10}: {v:.4f}")
+
+    # -----------------------------
+    # Confusion matrix and report
+    # -----------------------------
     print("\nConfusion Matrix (Test Set):")
     cm = confusion_matrix(y_test, y_test_pred)
     print(cm)
-    
+
     print("\nClassification Report (Test Set):")
-    print(classification_report(y_test, y_test_pred, 
-                                target_names=['On-time', 'Delayed']))
-    
-    metrics = {
-        'train_accuracy': train_accuracy,
-        'train_precision': train_precision,
-        'train_recall': train_recall,
-        'train_f1': train_f1,
-        'test_accuracy': test_accuracy,
-        'test_precision': test_precision,
-        'test_recall': test_recall,
-        'test_f1': test_f1,
-        'test_roc_auc': test_roc_auc,
-        'confusion_matrix': cm,
-        'y_test_pred': y_test_pred,
-        'y_test_proba': y_test_proba
+    print(classification_report(
+        y_test, y_test_pred,
+        target_names=target_names or ["Class 0", "Class 1"],
+        zero_division=0
+    ))
+
+    # -----------------------------
+    # Return collected metrics
+    # -----------------------------
+    return {
+        "train_metrics": train_metrics,
+        "test_metrics": test_metrics,
+        "confusion_matrix": cm,
+        "y_test_pred": y_test_pred,
+        "y_test_proba": y_test_proba
     }
-    
-    return metrics
 
 
 def get_feature_coefficients(model, feature_names, top_n=20):

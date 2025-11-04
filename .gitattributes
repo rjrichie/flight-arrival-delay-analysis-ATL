@@ -1,3 +1,4 @@
 ./Dataset_BTS.zip filter=lfs diff=lfs merge=lfs -text
 ./data/* filter=lfs diff=lfs merge=lfs -text
 data/* filter=lfs diff=lfs merge=lfs -text
+./outputs/models/* filter=lfs diff=lfs merge=lfs -text

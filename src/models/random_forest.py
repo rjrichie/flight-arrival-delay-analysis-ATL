@@ -71,9 +71,7 @@ def train_random_forest_regressor(X_train, y_train, n_estimators=100,
     RandomForestRegressor
         Trained model
     """
-    print("\n" + "=" * 60)
     print("TRAINING RANDOM FOREST REGRESSOR")
-    print("=" * 60)
     
     print(f"\nModel parameters:")
     print(f"  - n_estimators: {n_estimators}")
@@ -136,9 +134,7 @@ def train_random_forest_classifier(X_train, y_train, n_estimators=100,
     RandomForestClassifier
         Trained model
     """
-    print("\n" + "=" * 60)
     print("TRAINING RANDOM FOREST CLASSIFIER")
-    print("=" * 60)
     
     print(f"\nModel parameters:")
     print(f"  - n_estimators: {n_estimators}")
@@ -184,9 +180,7 @@ def evaluate_regressor(model, X_train, y_train, X_test, y_test):
     dict
         Dictionary containing evaluation metrics
     """
-    print("\n" + "=" * 60)
     print("REGRESSION MODEL EVALUATION")
-    print("=" * 60)
     
     # Predictions
     y_train_pred = model.predict(X_train)
@@ -234,9 +228,7 @@ def evaluate_classifier(model, X_train, y_train, X_test, y_test):
     dict
         Dictionary containing evaluation metrics
     """
-    print("\n" + "=" * 60)
     print("CLASSIFICATION MODEL EVALUATION")
-    print("=" * 60)
     
     # Predictions
     y_train_pred = model.predict(X_train)
@@ -319,9 +311,7 @@ def get_feature_importance(model, feature_names, top_n=20):
         'Importance': importances
     }).sort_values('Importance', ascending=False)
     
-    print("\n" + "=" * 60)
     print(f"TOP {top_n} FEATURE IMPORTANCES")
-    print("=" * 60)
     print(feature_importance_df.head(top_n).to_string(index=False))
     
     return feature_importance_df

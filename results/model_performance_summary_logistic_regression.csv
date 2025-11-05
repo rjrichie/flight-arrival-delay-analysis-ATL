@@ -1,0 +1,4 @@
+Model,Task,Test_RMSE,Test_MAE,Test_R2,Test_Accuracy,Test_Precision,Test_Recall,Test_F1,Test_ROC_AUC
+Logistic Regression Classifier (Balanced),Classification (Delay Detection),,,,0.6000189894968438,0.185829774884955,0.4831630233260035,0.2684216514662467,0.5804670021802357
+Logistic Regression Classifier (Balanced),Classification (Delay Detection),,,,0.600097566725163,0.1858563407615051,0.4831199068684517,0.2684427088636404,0.5804671148623145
+Logistic Regression Classifier (Balanced),Classification (Delay Detection),,,,0.6000189894968438,0.18582977488495503,0.4831630233260035,0.2684216514662467,0.5804667375354717

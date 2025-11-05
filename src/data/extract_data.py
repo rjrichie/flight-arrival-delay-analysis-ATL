@@ -16,9 +16,9 @@ def extract_and_process_flight_data(zip_path='Dataset_BTS.zip',
     - processed_folder: Folder for processed combined CSV
     """
     
-    print("=" * 60)
+
     print("FLIGHT DELAY DATA EXTRACTION & PROCESSING")
-    print("=" * 60)
+
     
     # Step 1: Create necessary folders
     raw_path = Path(raw_folder)
@@ -102,16 +102,16 @@ def extract_and_process_flight_data(zip_path='Dataset_BTS.zip',
     # should be done in-memory via pandas (e.g. in `load_data()`).
     combined_df.to_csv(output_file, index=False)
     
-    print("=" * 60)
+    
     print("PROCESSING COMPLETE!")
-    print("=" * 60)
+
     print(f"\n!!! Combined CSV saved to: {output_file}")
     print(f"!!! Total records: {len(combined_df):,}")
     print(f"!!! Columns: {len(combined_df.columns)}")
     print(f"\nColumn names:")
     for col in combined_df.columns:
         print(f"  - {col}")
-    print("\n" + "=" * 60)
+    
 
 if __name__ == "__main__":
     # Run the extraction and processing

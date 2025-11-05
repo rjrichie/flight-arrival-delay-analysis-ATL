@@ -21,7 +21,7 @@ DATASET CHARACTERISTICS:
   • Date range:           2019-01-01 00:00:00 to 2025-07-31 00:00:00
   • Unique carriers:      11
   • Unique airports:      173
-  • Memory usage:         401.97 MB
+  • Memory usage:         448.58 MB
 
 DELAY STATISTICS:
 -----------------

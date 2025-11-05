@@ -19,9 +19,9 @@ def create_basic_features(df):
     Returns:
         DataFrame with basic features added
     """
-    print("\n" + "=" * 60)
+    
     print("CREATING BASIC FEATURES")
-    print("=" * 60)
+    
 
     # Expect the canonical date column created by eda_utils.load_data()
     date_col = CANONICAL_DATE
@@ -67,11 +67,11 @@ def create_basic_features(df):
     conditions = [m.isin([12, 1, 2]), m.isin([3, 4, 5]), m.isin([6, 7, 8])]
     choices = ['Winter', 'Spring', 'Summer']
     df['Season'] = np.select(conditions, choices, default='Fall')
-    print("✓ Created Season")
+    print("Created Season")
     
     # 4. Is_Delayed (binary: >15 minutes)
     df['Is_Delayed'] = (df['Arrival Delay (Minutes)'] > 15).astype(int)
-    print("✓ Created Is_Delayed")
+    print("Created Is_Delayed")
     
     print(f"\nFeature summary:")
     print(f"  - IsWeekend: {df['IsWeekend'].sum():,} ({df['IsWeekend'].mean()*100:.2f}%)")
@@ -103,23 +103,23 @@ def encode_categorical_features(df):
     print("\nOne-hot encoding Carrier Code...")
     df_encoded = pd.get_dummies(df_encoded, columns=['Carrier Code'], prefix='Carrier', dtype=int)
     carrier_cols = [col for col in df_encoded.columns if col.startswith('Carrier_')]
-    print(f"✓ Created {len(carrier_cols)} carrier dummy variables")
+    print(f"Created {len(carrier_cols)} carrier dummy variables")
     
     # Label Encode Origin Airport
     print(f"\nLabel encoding Origin Airport...")
     le_airport = LabelEncoder()
     df_encoded['Origin_Airport_Encoded'] = le_airport.fit_transform(df_encoded['Origin Airport'])
     label_encoders['Origin Airport'] = le_airport
-    print(f"✓ Encoded {df_encoded['Origin Airport'].nunique()} unique airports")
+    print(f"Encoded {df_encoded['Origin Airport'].nunique()} unique airports")
     
     # Label Encode Season
     print(f"\nLabel encoding Season...")
     le_season = LabelEncoder()
     df_encoded['Season_Encoded'] = le_season.fit_transform(df_encoded['Season'])
     label_encoders['Season'] = le_season
-    print(f"✓ Encoded Season: {dict(zip(le_season.classes_, le_season.transform(le_season.classes_)))}")
+    print(f"Encoded Season: {dict(zip(le_season.classes_, le_season.transform(le_season.classes_)))}")
     
-    print(f"\n✓ Encoding complete. Total columns: {df_encoded.shape[1]}")
+    print(f"\n Encoding complete. Total columns: {df_encoded.shape[1]}")
     
     return df_encoded, label_encoders
 
@@ -134,9 +134,9 @@ def select_features_for_modeling(df):
     Returns:
         List of feature column names
     """
-    print("\n" + "=" * 60)
+
     print("SELECTING FEATURES FOR MODELING")
-    print("=" * 60)
+
     
     # Features to EXCLUDE
     exclude_features = [
@@ -175,7 +175,7 @@ def select_features_for_modeling(df):
     # Select features
     feature_cols = [col for col in df.columns if col not in exclude_features]
     
-    print(f"\n✓ Total features: {len(feature_cols)}")
+    print(f"\nTotal features: {len(feature_cols)}")
     print(f"\nFeatures for modeling:")
     for i, col in enumerate(feature_cols, 1):
         print(f"  {i:2}. {col}")
@@ -194,14 +194,14 @@ def feature_engineering_pipeline(input_path, output_path):
     Returns:
         DataFrame with engineered features, feature columns, encoders
     """
-    print("\n" + "=" * 80)
+
     print("FEATURE ENGINEERING PIPELINE (SIMPLIFIED)")
-    print("=" * 80)
+
     
     # Load cleaned data
     print(f"\nLoading data from: {input_path}")
     df = pd.read_csv(input_path)
-    print(f"✓ Loaded {len(df):,} rows, {len(df.columns)} columns")
+    print(f"Loaded {len(df):,} rows, {len(df.columns)} columns")
     
     # Create basic features
     df = create_basic_features(df)
@@ -213,9 +213,9 @@ def feature_engineering_pipeline(input_path, output_path):
     feature_cols = select_features_for_modeling(df_encoded)
     
     # Save
-    print("\n" + "=" * 60)
+
     print("SAVING ENGINEERED DATA")
-    print("=" * 60)
+
     
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -226,16 +226,16 @@ def feature_engineering_pipeline(input_path, output_path):
     df_to_save = df_encoded[cols_to_save]
     
     df_to_save.to_csv(output_path, index=False)
-    print(f"✓ Saved to: {output_path}")
-    print(f"✓ Shape: {df_to_save.shape}")
-    print(f"✓ Column order: 1 date + {len(feature_cols)} features + 2 targets")
+    print(f"Saved to: {output_path}")
+    print(f"Shape: {df_to_save.shape}")
+    print(f"Column order: 1 date + {len(feature_cols)} features + 2 targets")
     print(f"  - Features: {len(feature_cols)}")
     print(f"  - Regression target: Arrival Delay (Minutes)")
     print(f"  - Classification target: Is_Delayed")
     
-    print("\n" + "=" * 80)
-    print("✓ FEATURE ENGINEERING COMPLETE")
-    print("=" * 80)
+
+    print("FEATURE ENGINEERING COMPLETE")
+
     
     return df_to_save, feature_cols, label_encoders
 
@@ -247,5 +247,5 @@ if __name__ == "__main__":
     
     df_engineered, features, encoders = feature_engineering_pipeline(input_file, output_file)
     
-    print(f"\n✓ Engineered dataset: {df_engineered.shape}")
-    print(f"✓ Total features: {len(features)}")
+    print(f"\n Engineered dataset: {df_engineered.shape}")
+    print(f"Total features: {len(features)}")

@@ -68,7 +68,7 @@ def load_data(file_path='data/processed/flight_delays_combined.csv', nrows=None)
     if 'Date (MM/DD/YYYY)' in df.columns:
         try:
             df = df.drop(columns=['Date (MM/DD/YYYY)'])
-            print("✓ Dropped column 'Date (MM/DD/YYYY)', using 'Date (YYYY-MM-DD)'")
+            print("Dropped column 'Date (MM/DD/YYYY)', using 'Date (YYYY-MM-DD)'")
         except Exception:
             pass
 
@@ -82,17 +82,17 @@ def load_data(file_path='data/processed/flight_delays_combined.csv', nrows=None)
             # Insert at position 1 (second column)
             cols.insert(1, date_col)
             df = df.loc[:, cols]
-            print(f"✓ Moved '{date_col}' to column position 2 (in-memory)")
+            print(f"Moved '{date_col}' to column position 2 (in-memory)")
         except Exception:
             # If something goes wrong, leave original ordering
             pass
     
     # Memory usage info
-    print(f"✓ Loaded {len(df):,} rows and {len(df.columns)} columns")
-    print(f"✓ Memory usage: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
+    print(f"Loaded {len(df):,} rows and {len(df.columns)} columns")
+    print(f"Memory usage: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
     
     # Display dtype info
-    print(f"\n✓ Data types optimized:")
+    print(f"\n Data types optimized:")
     print(f"  - Categorical: {len(df.select_dtypes(include='category').columns)}")
     print(f"  - Datetime: {len(df.select_dtypes(include='datetime').columns)}")
     print(f"  - Numeric (int): {len(df.select_dtypes(include=['int8', 'int16', 'int32', 'Int16', 'Int32']).columns)}")
@@ -102,15 +102,15 @@ def load_data(file_path='data/processed/flight_delays_combined.csv', nrows=None)
 
 def basic_info(df):
     """Display basic dataset information"""
-    print("=" * 60)
+    
     print("DATASET BASIC INFORMATION")
-    print("=" * 60)
+    
     print(f"\nShape: {df.shape[0]:,} rows x {df.shape[1]} columns")
     print(f"Memory usage: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
     
-    print("\n" + "=" * 60)
+    
     print("COLUMN INFORMATION")
-    print("=" * 60)
+    
     print(f"\n{'Column Name':<45} {'Type':<20} {'Non-Null':<15} {'Null %'}")
     print("-" * 90)
     for col in df.columns:
@@ -120,9 +120,9 @@ def basic_info(df):
         print(f"{col:<45} {dtype:<20} {non_null:<15,} {null_pct:>6.2f}%")
     
     # Summary by data type
-    print("\n" + "=" * 60)
+    
     print("DATA TYPE SUMMARY")
-    print("=" * 60)
+    
     dtype_counts = df.dtypes.value_counts()
     for dtype, count in dtype_counts.items():
         print(f"{str(dtype):<20} {count:>3} columns")
@@ -131,9 +131,9 @@ def basic_info(df):
 
 def missing_value_analysis(df):
     """Analyze missing values in the dataset"""
-    print("\n" + "=" * 60)
+    
     print("MISSING VALUE ANALYSIS")
-    print("=" * 60)
+    
     
     missing = df.isna().sum()
     missing_pct = (missing / len(df)) * 100
@@ -145,7 +145,7 @@ def missing_value_analysis(df):
     missing_df = missing_df[missing_df['Missing_Count'] > 0].sort_values('Missing_Percentage', ascending=False)
     
     if len(missing_df) == 0:
-        print("\n✓ No missing values found!")
+        print("\n No missing values found!")
     else:
         print(f"\nColumns with missing values: {len(missing_df)}/{len(df.columns)}")
         print("\n" + missing_df.to_string(index=False))
@@ -185,14 +185,14 @@ def visualize_missing_values(df, figsize=(12, 6)):
     plt.tight_layout()
     output_path = output_dir / 'missing_values_analysis.png'
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    print(f"✓ Saved: {output_path}")
+    print(f"Saved: {output_path}")
     plt.show()
 
 def analyze_missing_patterns(df):
     """Analyze patterns of missing values across rows and columns"""
-    print("\n" + "=" * 60)
+    
     print("MISSING VALUE PATTERN ANALYSIS")
-    print("=" * 60)
+   
     
     # Count missing values per row
     missing_per_row = df.isna().sum(axis=1)
@@ -200,18 +200,17 @@ def analyze_missing_patterns(df):
     print(f"Rows with ALL values: {(missing_per_row == 0).sum():,} ({(missing_per_row == 0).sum() / len(df) * 100:.2f}%)")
     
     # Distribution of missing values per row
-    print("\n" + "=" * 60)
+    
     print("MISSING VALUES PER ROW DISTRIBUTION")
-    print("=" * 60)
+    
     missing_counts = missing_per_row.value_counts().sort_index()
     for n_missing, count in missing_counts.items():
         if n_missing > 0:
             print(f"{n_missing:>2} missing columns: {count:>6,} rows ({count/len(df)*100:>6.2f}%)")
     
     # Identify rows with multiple missing values
-    print("\n" + "=" * 60)
     print("ROWS WITH MULTIPLE MISSING VALUES")
-    print("=" * 60)
+   
     
     # Find rows with > 1 missing value
     rows_multiple_missing = df[missing_per_row > 1]
@@ -229,12 +228,12 @@ def analyze_missing_patterns(df):
             if len(missing_col_names) > 5:
                 print(f"    ... and {len(missing_col_names) - 5} more")
     else:
-        print("\n✓ No rows with multiple missing values")
+        print("\nNo rows with multiple missing values")
     
     # Co-occurrence of missing values
-    print("\n" + "=" * 60)
+
     print("MISSING VALUE CO-OCCURRENCE")
-    print("=" * 60)
+
     
     # Find columns that are always missing together
     missing_mask = df.isna()
@@ -254,9 +253,9 @@ def analyze_missing_patterns(df):
 
 def detect_outliers(df, columns, method='iqr'):
     """Detect outliers using IQR method"""
-    print("\n" + "=" * 60)
+
     print("OUTLIER DETECTION (IQR Method)")
-    print("=" * 60)
+
     
     outlier_summary = []
     
@@ -309,7 +308,7 @@ def plot_distributions(df, numeric_cols, figsize=(15, 10)):
     plt.tight_layout()
     output_path = output_dir / 'distributions.png'
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    print(f"✓ Saved: {output_path}")
+    print(f"Saved: {output_path}")
     plt.show()
 
 def correlation_analysis(df, numeric_cols, figsize=(12, 10)):
@@ -318,9 +317,8 @@ def correlation_analysis(df, numeric_cols, figsize=(12, 10)):
     output_dir = PROJECT_ROOT / 'results' / 'figures'
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    print("\n" + "=" * 60)
     print("CORRELATION ANALYSIS")
-    print("=" * 60)
+
     
     corr_matrix = df[numeric_cols].corr()
     
@@ -331,40 +329,39 @@ def correlation_analysis(df, numeric_cols, figsize=(12, 10)):
     plt.tight_layout()
     output_path = output_dir / 'correlation_matrix.png'
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    print(f"✓ Saved: {output_path}")
+    print(f"Saved: {output_path}")
     plt.show()
     
     return corr_matrix
 
 def data_quality_report(df):
     """Generate comprehensive data quality report"""
-    print("\n" + "=" * 60)
     print("DATA QUALITY REPORT")
-    print("=" * 60)
+
     
     quality_issues = []
     
     # Check for duplicates
     duplicates = df.duplicated().sum()
     if duplicates > 0:
-        quality_issues.append(f"⚠ Found {duplicates:,} duplicate rows ({duplicates/len(df)*100:.2f}%)")
+        quality_issues.append(f"Found {duplicates:,} duplicate rows ({duplicates/len(df)*100:.2f}%)")
     else:
-        quality_issues.append("✓ No duplicate rows found")
+        quality_issues.append("No duplicate rows found")
 
     # Check for missing values
     missing_cols = df.isna().sum()
     missing_cols = missing_cols[missing_cols > 0]
     if len(missing_cols) > 0:
-        quality_issues.append(f"⚠ {len(missing_cols)} columns have missing values")
+        quality_issues.append(f"{len(missing_cols)} columns have missing values")
     else:
-        quality_issues.append("✓ No missing values")
+        quality_issues.append("No missing values")
     
     # Check for constant columns
     constant_cols = [col for col in df.columns if df[col].nunique() == 1]
     if constant_cols:
-        quality_issues.append(f"⚠ Constant columns (no variance): {', '.join(constant_cols)}")
+        quality_issues.append(f"Constant columns (no variance): {', '.join(constant_cols)}")
     else:
-        quality_issues.append("✓ No constant columns")
+        quality_issues.append("No constant columns")
     
     # Check data types
     quality_issues.append(f"\nData type distribution:")

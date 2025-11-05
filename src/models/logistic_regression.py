@@ -14,12 +14,12 @@ from sklearn.metrics import (
 import joblib
 from pathlib import Path
 import time
-#from tabulate import tabulate # Used for printing clean feature tables
+
 
 
 def load_engineered_data(filepath):
     """
-    Load the dataset for modeling.
+    Load the dataset for modeling
     """
     df = pd.read_csv(filepath)
     return df
@@ -27,13 +27,12 @@ def load_engineered_data(filepath):
 
 def prepare_data_for_modeling(df, feature_cols, target_col, test_size=0.2, random_state=42):
     """
-    Split data into train and test sets (non-stratified for consistency).
+    Split data into train and test sets
     """
     X = df[feature_cols]
     y = df[target_col]
     
-    # NOTE: Using stratify=y is generally recommended for imbalanced data,
-    # but the existing RF notebook did not use it. We maintain consistency.
+    
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=random_state
     )
@@ -48,7 +47,7 @@ def prepare_data_for_modeling(df, feature_cols, target_col, test_size=0.2, rando
 
 def train_logistic_regression(X_train, y_train, C=1.0, penalty='l2', class_weight=None, solver='saga', random_state=42, n_jobs=-1, verbose=0, max_iter=5000):
     """
-    Train a Logistic Regression model for classification.
+    Train a Logistic Regression model for classification
     
     Parameters:
     - class_weight: Use 'balanced' to handle class imbalance.
@@ -74,19 +73,17 @@ def train_logistic_regression(X_train, y_train, C=1.0, penalty='l2', class_weigh
     model.fit(X_train, y_train)
     
     end_time = time.time()
-    print(f"✓ Model trained in: {end_time - start_time:.2f} seconds")
+    print(f"Model trained in: {end_time - start_time:.2f} seconds")
     
     return model
 
 
 def tune_logistic_regression_hyperparams(X_train, y_train, cv=5, n_jobs=-1, verbose=1):
     """
-    Perform hyperparameter tuning for Logistic Regression using GridSearchCV.
-    Returns the best estimator and best parameters.
+    Perform hyperparameter tuning for Logistic Regression using GridSearchCV
+    Returns the best estimator and best parameters
     """
-    print("\n" + "=" * 60)
     print("STARTING HYPERPARAMETER TUNING (LOGISTIC REGRESSION)")
-    print("=" * 60)
 
     model = LogisticRegression(max_iter=5000, solver='saga')
 
@@ -118,8 +115,8 @@ def tune_logistic_regression_hyperparams(X_train, y_train, cv=5, n_jobs=-1, verb
 
 def evaluate_classifier(model, X_test, y_test, X_train=None, y_train=None, threshold=0.5, target_names=None):
     """
-    Evaluate a classifier on training and test data.
-    Handles imbalanced data safely and avoids metric warnings.
+    Evaluate a classifier on training and test data
+    Handles imbalanced data safely and avoids metric warnings
     
     Args:
         model: Trained classifier (must implement predict() and predict_proba()).
@@ -132,9 +129,8 @@ def evaluate_classifier(model, X_test, y_test, X_train=None, y_train=None, thres
     print(f"CLASSIFIER EVALUATION ({type(model).__name__})")
     print("=" * 60)
 
-    # -----------------------------
+    
     # Get predictions
-    # -----------------------------
     if hasattr(model, "predict_proba"):
         y_test_proba = model.predict_proba(X_test)[:, 1]
         y_test_pred = (y_test_proba >= threshold).astype(int)
@@ -142,9 +138,8 @@ def evaluate_classifier(model, X_test, y_test, X_train=None, y_train=None, thres
         y_test_proba = None
         y_test_pred = model.predict(X_test)
 
-    # -----------------------------
+    
     # Training performance (optional)
-    # -----------------------------
     if X_train is not None and y_train is not None:
         y_train_pred = model.predict(X_train)
         train_metrics = {
@@ -160,9 +155,8 @@ def evaluate_classifier(model, X_test, y_test, X_train=None, y_train=None, thres
     else:
         train_metrics = {}
 
-    # -----------------------------
+    
     # Test performance
-    # -----------------------------
     test_metrics = {
         "accuracy": accuracy_score(y_test, y_test_pred),
         "precision": precision_score(y_test, y_test_pred, zero_division=0),
@@ -182,9 +176,8 @@ def evaluate_classifier(model, X_test, y_test, X_train=None, y_train=None, thres
     for k, v in test_metrics.items():
         print(f"  {k.capitalize():<10}: {v:.4f}")
 
-    # -----------------------------
+   
     # Confusion matrix and report
-    # -----------------------------
     print("\nConfusion Matrix (Test Set):")
     cm = confusion_matrix(y_test, y_test_pred)
     print(cm)
@@ -210,7 +203,7 @@ def evaluate_classifier(model, X_test, y_test, X_train=None, y_train=None, thres
 
 def get_feature_coefficients(model, feature_names, top_n=20):
     """
-    Display and return top logistic regression coefficients.
+    Display and return top logistic regression coefficients
     """
     # For binary classification, model.coef_ is a 2D array, we flatten it.
     coef = model.coef_.flatten() 
@@ -223,9 +216,7 @@ def get_feature_coefficients(model, feature_names, top_n=20):
     # Use to_string() for clean printing without external libraries
     top_coef_string = coef_df.head(top_n).to_string(index=False, float_format="%.4f")
     
-    print("\n" + "=" * 60)
     print(f"TOP {top_n} MOST INFLUENTIAL FEATURES (by Absolute Coefficient)")
-    print("=" * 60)
     print(top_coef_string)
     
     return coef_df
@@ -233,7 +224,7 @@ def get_feature_coefficients(model, feature_names, top_n=20):
 
 def save_model(model, filepath):
     """
-    Save the trained model to disk.
+    Save the trained model to disk
     """
     joblib.dump(model, filepath)
-    print(f"\n✓ Model successfully saved to: {filepath}")
+    print(f"\nModel successfully saved to: {filepath}")

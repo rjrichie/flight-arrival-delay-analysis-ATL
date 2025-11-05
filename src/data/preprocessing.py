@@ -30,9 +30,8 @@ def remove_invalid_rows(df):
     Returns:
         DataFrame with invalid rows removed
     """
-    print("\n" + "=" * 60)
     print("REMOVING INVALID ROWS")
-    print("=" * 60)
+
     
     initial_len = len(df)
     
@@ -77,8 +76,8 @@ def remove_invalid_rows(df):
     df_clean = df[missing_count < 10].copy()
     
     removed = initial_len - len(df_clean)
-    print(f"✓ Removed {removed:,} rows with {len(critical_cols)} critical columns missing ({removed/initial_len*100:.4f}%)")
-    print(f"✓ Remaining: {len(df_clean):,} rows")
+    print(f"Removed {removed:,} rows with {len(critical_cols)} critical columns missing ({removed/initial_len*100:.4f}%)")
+    print(f"Remaining: {len(df_clean):,} rows")
     
     return df_clean
 
@@ -93,9 +92,9 @@ def handle_missing_values(df, strategy='median'):
     Returns:
         DataFrame with missing values handled
     """
-    print("\n" + "=" * 60)
+
     print("HANDLING MISSING VALUES")
-    print("=" * 60)
+
     
     df = df.copy()
     
@@ -158,8 +157,8 @@ def handle_missing_values(df, strategy='median'):
     
     # Final missing value count
     final_missing = df.isna().sum().sum()
-    print(f"\n✓ Final missing values: {final_missing:,}")
-    print(f"✓ Reduced missing values by {initial_missing - final_missing:,}")
+    print(f"\n Final missing values: {final_missing:,}")
+    print(f"Reduced missing values by {initial_missing - final_missing:,}")
     
     return df
 
@@ -173,9 +172,7 @@ def validate_data_types(df):
     Returns:
         DataFrame with validated data types
     """
-    print("\n" + "=" * 60)
     print("VALIDATING DATA TYPES")
-    print("=" * 60)
     
     df = df.copy()
     changes_made = 0
@@ -220,7 +217,7 @@ def validate_data_types(df):
         if col in df.columns:
             if df[col].dtype != 'category':
                 df[col] = df[col].astype('category')
-                print(f"✓ Converted '{col}' to category")
+                print(f"Converted '{col}' to category")
                 changes_made += 1
     
     # Ensure time columns are string type
@@ -229,19 +226,19 @@ def validate_data_types(df):
         if col in df.columns:
             if df[col].dtype != 'string':
                 df[col] = df[col].astype('string')
-                print(f"✓ Converted '{col}' to string")
+                print(f"Converted '{col}' to string")
                 changes_made += 1
     
     # Ensure Tail Number is string
     if 'Tail Number' in df.columns and df['Tail Number'].dtype != 'string':
         df['Tail Number'] = df['Tail Number'].astype('string')
-        print(f"✓ Converted 'Tail Number' to string")
+        print(f"Converted 'Tail Number' to string")
         changes_made += 1
     
     if changes_made == 0:
-        print("✓ All data types are correct")
+        print("All data types are correct")
     else:
-        print(f"\n✓ Data type validation complete ({changes_made} changes made)")
+        print(f"\nData type validation complete ({changes_made} changes made)")
     
     return df
 
@@ -258,12 +255,12 @@ def handle_outliers(df, columns=None, method='cap', threshold=1.5):
     Returns:
         DataFrame with outliers handled
     """
-    print("\n" + "=" * 60)
+
     print(f"HANDLING OUTLIERS (method={method})")
-    print("=" * 60)
+
     
     if method == 'keep':
-        print("✓ Keeping outliers as-is (Random Forest is robust to outliers)")
+        print("Keeping outliers as-is (Random Forest is robust to outliers)")
         return df
     
     df = df.copy()
@@ -309,9 +306,9 @@ def handle_outliers(df, columns=None, method='cap', threshold=1.5):
         initial_len = len(df)
         df = df[~combined_mask]
         removed = initial_len - len(df)
-        print(f"\n✓ Removed {removed:,} rows with outliers ({removed/initial_len*100:.2f}%)")
+        print(f"\n Removed {removed:,} rows with outliers ({removed/initial_len*100:.2f}%)")
     
-    print(f"✓ Outlier handling complete")
+    print(f"Outlier handling complete")
     
     return df
 
@@ -325,16 +322,14 @@ def remove_duplicates(df):
     Returns:
         DataFrame with duplicates removed
     """
-    print("\n" + "=" * 60)
     print("REMOVING DUPLICATES")
-    print("=" * 60)
     
     initial_len = len(df)
     df = df.drop_duplicates()
     removed = initial_len - len(df)
     
-    print(f"✓ Removed {removed:,} duplicate rows ({removed/initial_len*100:.2f}%)")
-    print(f"✓ Remaining: {len(df):,} rows")
+    print(f"Removed {removed:,} duplicate rows ({removed/initial_len*100:.2f}%)")
+    print(f"Remaining: {len(df):,} rows")
     
     return df
 
@@ -350,9 +345,7 @@ def filter_by_date_range(df, start_date=None, end_date=None):
     Returns:
         Filtered DataFrame
     """
-    print("\n" + "=" * 60)
     print("FILTERING BY DATE RANGE")
-    print("=" * 60)
     
     df = df.copy()
     initial_len = len(df)
@@ -361,22 +354,22 @@ def filter_by_date_range(df, start_date=None, end_date=None):
     try:
         date_col = _choose_date_col(df)
     except KeyError:
-        print("⚠ Date column not found, skipping date filter")
+        print("Date column not found, skipping date filter")
         return df
 
     if start_date:
         start_date = pd.to_datetime(start_date)
         df = df[df[date_col] >= start_date]
-        print(f"✓ Filtered from: {start_date.date()}")
+        print(f"Filtered from: {start_date.date()}")
 
     if end_date:
         end_date = pd.to_datetime(end_date)
         df = df[df[date_col] <= end_date]
-        print(f"✓ Filtered to: {end_date.date()}")
+        print(f"Filtered to: {end_date.date()}")
     
     removed = initial_len - len(df)
-    print(f"✓ Removed {removed:,} rows outside date range")
-    print(f"✓ Remaining: {len(df):,} rows")
+    print(f"Removed {removed:,} rows outside date range")
+    print(f"Remaining: {len(df):,} rows")
     
     return df
 
@@ -403,14 +396,12 @@ def preprocessing_pipeline(input_path, output_path,
     Returns:
         Cleaned DataFrame
     """
-    print("\n" + "=" * 80)
     print("STARTING DATA PREPROCESSING PIPELINE")
-    print("=" * 80)
     
     # Load data
     print(f"\nLoading data from: {input_path}")
     df = pd.read_csv(input_path)
-    print(f"✓ Loaded {len(df):,} rows, {len(df.columns)} columns")
+    print(f"Loaded {len(df):,} rows, {len(df.columns)} columns")
     # --- Ensure canonical date column exists in-memory (do NOT modify files on disk) ---
     # If the CSV still contains the legacy header, convert it to the canonical
     # name and drop the legacy header. Otherwise ensure the canonical column is
@@ -418,7 +409,7 @@ def preprocessing_pipeline(input_path, output_path,
     if 'Date (MM/DD/YYYY)' in df.columns:
         df[CANONICAL_DATE] = pd.to_datetime(df['Date (MM/DD/YYYY)'], errors='coerce')
         df = df.drop(columns=['Date (MM/DD/YYYY)'])
-        print(f"✓ Created in-memory canonical date column '{CANONICAL_DATE}' from legacy header and dropped legacy column")
+        print(f"Created in-memory canonical date column '{CANONICAL_DATE}' from legacy header and dropped legacy column")
     elif CANONICAL_DATE in df.columns:
         df[CANONICAL_DATE] = pd.to_datetime(df[CANONICAL_DATE], errors='coerce')
 
@@ -429,7 +420,7 @@ def preprocessing_pipeline(input_path, output_path,
             cols = [c for c in cols if c != CANONICAL_DATE]
             cols.insert(1, CANONICAL_DATE)
             df = df.loc[:, cols]
-            print(f"✓ Moved '{CANONICAL_DATE}' to column position 2 (in-memory)")
+            print(f"Moved '{CANONICAL_DATE}' to column position 2 (in-memory)")
     # ------------------------------------------------------------------------------
     
     # Step 1: Remove invalid rows
@@ -458,21 +449,17 @@ def preprocessing_pipeline(input_path, output_path,
         df = handle_outliers(df, method=handle_outliers_method)
     
     # Save cleaned data
-    print("\n" + "=" * 60)
     print("SAVING CLEANED DATA")
-    print("=" * 60)
     
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     
     df.to_csv(output_path, index=False)
-    print(f"✓ Saved to: {output_path}")
-    print(f"✓ Final shape: {len(df):,} rows, {len(df.columns)} columns")
+    print(f"Saved to: {output_path}")
+    print(f"Final shape: {len(df):,} rows, {len(df.columns)} columns")
     
     # Summary
-    print("\n" + "=" * 80)
     print("PREPROCESSING COMPLETE")
-    print("=" * 80)
     print(f"Output file: {output_path}")
     print(f"Rows: {len(df):,}")
     print(f"Columns: {len(df.columns)}")
@@ -497,4 +484,4 @@ if __name__ == "__main__":
         date_range=None  # No date filtering
     )
     
-    print("\n✓ Preprocessing complete!")
+    print("\nPreprocessing complete!")

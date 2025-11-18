@@ -239,13 +239,78 @@ def feature_engineering_pipeline(input_path, output_path):
     
     return df_to_save, feature_cols, label_encoders
 
+def feature_engineering_pipeline_regression(input_path, output_path):
+    """
+    Feature engineering pipeline specifically for REGRESSION tasks.
+    
+    Creates features and saves with 'Arrival Delay (Minutes)' as target
+    (instead of 'Is_Delayed' binary classification target).
+    
+    Args:
+        input_path: Path to cleaned regression data CSV
+        output_path: Path to save engineered regression data CSV
+    
+    Returns:
+        DataFrame with engineered features, feature columns, encoders
+    """
+    print("=" * 80)
+    print("FEATURE ENGINEERING PIPELINE (REGRESSION)")
+    print("=" * 80)
+    
+    # Load cleaned data
+    print(f"\nLoading data from: {input_path}")
+    df = pd.read_csv(input_path)
+    print(f"Loaded {len(df):,} rows, {len(df.columns)} columns")
+    
+    # Create basic features (same as classification)
+    df = create_basic_features(df)
+    
+    # Encode categorical features (same as classification)
+    df_encoded, label_encoders = encode_categorical_features(df)
+    
+    # Select features (same as classification)
+    feature_cols = select_features_for_modeling(df_encoded)
+    
+    # Save engineered data
+    print("\n" + "=" * 80)
+    print("SAVING ENGINEERED DATA (REGRESSION)")
+    print("=" * 80)
+    
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # For regression: Date + Features + Arrival Delay (Minutes)
+    # Note: 'Is_Delayed' was created in create_basic_features() but we exclude it
+    cols_to_save = [CANONICAL_DATE] + feature_cols + ['Arrival Delay (Minutes)']
+    
+    df_to_save = df_encoded[cols_to_save]
+    
+    df_to_save.to_csv(output_path, index=False)
+    print(f"✓ Saved to: {output_path}")
+    print(f"✓ Shape: {df_to_save.shape}")
+    print(f"✓ Columns: 1 date + {len(feature_cols)} features + 1 target (Arrival Delay)")
+    
+    # Show target statistics
+    print(f"\nRegression target statistics:")
+    print(df_to_save['Arrival Delay (Minutes)'].describe())
+    
+    print("\n" + "=" * 80)
+    print("FEATURE ENGINEERING COMPLETE (REGRESSION)")
+    print("=" * 80)
+    
+    return df_to_save, feature_cols, label_encoders
 
 # Example usage
 if __name__ == "__main__":
-    input_file = "../data/processed/flight_delays_cleaned.csv"
-    output_file = "../data/processed/flight_delays_engineered.csv"
+    input_file = "../../data/processed/flight_delays_cleaned.csv"
+    output_file = "../../data/processed/flight_delays_engineered.csv"
     
     df_engineered, features, encoders = feature_engineering_pipeline(input_file, output_file)
-    
-    print(f"\n Engineered dataset: {df_engineered.shape}")
-    print(f"Total features: {len(features)}")
+
+    input_file_reg = "../../data/processed/flight_delays_cleaned_regression.csv"
+    output_file_reg = "../../data/processed/flight_delays_engineered_regression.csv"
+
+    df_engineered_reg, features_reg, encoders_reg = feature_engineering_pipeline_regression(input_file_reg, output_file_reg)
+
+    print(f"\n Engineered dataset (regression): {df_engineered_reg.shape}")
+    print(f"Total features (regression): {len(features_reg)}")

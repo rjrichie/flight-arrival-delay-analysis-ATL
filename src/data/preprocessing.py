@@ -373,6 +373,56 @@ def filter_by_date_range(df, start_date=None, end_date=None):
     
     return df
 
+def prepare_regression_target(df, target_col='Arrival Delay (Minutes)', 
+                             cap_min=-60, cap_max=300):
+    """
+    Prepare regression target by removing extreme outliers.
+    
+    Args:
+        df: Input DataFrame
+        target_col: Name of delay column
+        cap_min: Minimum acceptable delay (e.g., -60 = 1 hour early)
+        cap_max: Maximum acceptable delay (e.g., 300 = 5 hours late)
+    
+    Returns:
+        DataFrame with extreme outliers removed
+    """
+    print(f"\n{'='*60}")
+    print("PREPARING REGRESSION TARGET")
+    print(f"{'='*60}")
+    
+    df = df.copy()
+    initial_len = len(df)
+    
+    # Show distribution before cleaning
+    print(f"\nOriginal '{target_col}' statistics:")
+    print(df[target_col].describe())
+    
+    # Count extremes
+    too_early = (df[target_col] < cap_min).sum()
+    too_late = (df[target_col] > cap_max).sum()
+    
+    print(f"\nExtreme outliers detected:")
+    print(f"  Too early (< {cap_min} min): {too_early:,} ({too_early/initial_len*100:.4f}%)")
+    print(f"  Too late  (> {cap_max} min): {too_late:,} ({too_late/initial_len*100:.4f}%)")
+    
+    # Remove extremes
+    df = df[(df[target_col] >= cap_min) & (df[target_col] <= cap_max)]
+    
+    removed = initial_len - len(df)
+    print(f"\n✓ Removed {removed:,} extreme outliers ({removed/initial_len*100:.4f}%)")
+    
+    # Show final distribution
+    print(f"\nCleaned '{target_col}' statistics:")
+    print(df[target_col].describe())
+    
+    print(f"\nDelay categories:")
+    print(f"  Early (< 0 min):      {(df[target_col] < 0).sum():,}")
+    print(f"  On-time (0-15 min):   {((df[target_col] >= 0) & (df[target_col] <= 15)).sum():,}")
+    print(f"  Delayed (> 15 min):   {(df[target_col] > 15).sum():,}")
+    
+    return df
+
 def preprocessing_pipeline(input_path, output_path, 
                           remove_invalid=True,
                           handle_missing=True,
@@ -467,21 +517,149 @@ def preprocessing_pipeline(input_path, output_path,
     
     return df
 
-# Example usage
+def preprocessing_pipeline_regression(input_path, output_path, 
+                                     remove_invalid=True,
+                                     handle_missing=True,
+                                     remove_dupes=True,
+                                     validate_dtypes=True,
+                                     handle_outliers_method='keep',
+                                     regression_cap_min=-60,
+                                     regression_cap_max=300,
+                                     date_range=None):
+    """
+    Preprocessing pipeline specifically for REGRESSION tasks.
+    
+    Identical to preprocessing_pipeline() but adds regression target cleaning.
+    
+    Args:
+        input_path: Path to input CSV file
+        output_path: Path to save cleaned CSV file
+        remove_invalid: Whether to remove invalid rows
+        handle_missing: Whether to handle missing values
+        remove_dupes: Whether to remove duplicates
+        validate_dtypes: Whether to validate data types
+        handle_outliers_method: How to handle outliers ('cap', 'remove', 'keep')
+        regression_cap_min: Minimum delay cap for regression (default: -60)
+        regression_cap_max: Maximum delay cap for regression (default: 300)
+        date_range: Tuple of (start_date, end_date) to filter
+    
+    Returns:
+        Cleaned DataFrame for regression
+    """
+    print("=" * 80)
+    print("STARTING REGRESSION PREPROCESSING PIPELINE")
+    print("=" * 80)
+    
+    # Load data
+    print(f"\nLoading data from: {input_path}")
+    df = pd.read_csv(input_path)
+    print(f"Loaded {len(df):,} rows, {len(df.columns)} columns")
+    
+    # Ensure canonical date column exists
+    if 'Date (MM/DD/YYYY)' in df.columns:
+        df[CANONICAL_DATE] = pd.to_datetime(df['Date (MM/DD/YYYY)'], errors='coerce')
+        df = df.drop(columns=['Date (MM/DD/YYYY)'])
+        print(f"Created canonical date column '{CANONICAL_DATE}'")
+    elif CANONICAL_DATE in df.columns:
+        df[CANONICAL_DATE] = pd.to_datetime(df[CANONICAL_DATE], errors='coerce')
+
+    # Move canonical date column to second position
+    if CANONICAL_DATE in df.columns:
+        cols = list(df.columns)
+        if cols[1] != CANONICAL_DATE:
+            cols = [c for c in cols if c != CANONICAL_DATE]
+            cols.insert(1, CANONICAL_DATE)
+            df = df.loc[:, cols]
+    
+    # Step 1: Remove invalid rows
+    if remove_invalid:
+        df = remove_invalid_rows(df)
+    
+    # Step 2: Filter by date range (if specified)
+    if date_range:
+        start_date, end_date = date_range
+        df = filter_by_date_range(df, start_date, end_date)
+    
+    # Step 3: Handle missing values
+    if handle_missing:
+        df = handle_missing_values(df, strategy='median')
+    
+    # Step 4: Remove duplicates
+    if remove_dupes:
+        df = remove_duplicates(df)
+    
+    # Step 5: Validate data types
+    if validate_dtypes:
+        df = validate_data_types(df)
+    
+    # Step 6: REGRESSION-SPECIFIC - Prepare regression target
+    df = prepare_regression_target(
+        df, 
+        target_col='Arrival Delay (Minutes)',
+        cap_min=regression_cap_min,
+        cap_max=regression_cap_max
+    )
+    
+    # Step 7: Handle outliers (optional, usually keep for regression)
+    if handle_outliers_method != 'keep':
+        df = handle_outliers(df, method=handle_outliers_method)
+    
+    # Save cleaned data
+    print("\n" + "=" * 60)
+    print("SAVING CLEANED DATA (REGRESSION)")
+    print("=" * 60)
+    
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    df.to_csv(output_path, index=False)
+    print(f"✓ Saved to: {output_path}")
+    print(f"✓ Final shape: {len(df):,} rows, {len(df.columns)} columns")
+    
+    # Summary
+    print("\n" + "=" * 80)
+    print("REGRESSION PREPROCESSING COMPLETE")
+    print("=" * 80)
+    print(f"Output file: {output_path}")
+    print(f"Rows: {len(df):,}")
+    print(f"Columns: {len(df.columns)}")
+    print(f"Memory usage: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
+    
+    return df
+
+# Example usage (keep existing, add new example)
 if __name__ == "__main__":
-    # Run preprocessing pipeline
+    # CLASSIFICATION preprocessing (existing)
     input_file = '../../data/processed/flight_delays_combined.csv'
-    output_file = '../../data/processed/flight_delays_cleaned.csv'
+    output_file_classification = '../../data/processed/flight_delays_cleaned.csv'
     
     df_clean = preprocessing_pipeline(
         input_path=input_file,
-        output_path=output_file,
+        output_path=output_file_classification,
         remove_invalid=True,
         handle_missing=True,
         remove_dupes=True,
         validate_dtypes=True,
-        handle_outliers_method='keep',  # Keep outliers for Random Forest
-        date_range=None  # No date filtering
+        handle_outliers_method='keep',
+        date_range=None
     )
     
-    print("\nPreprocessing complete!")
+    print("\n✓ Classification preprocessing complete!")
+    
+    # REGRESSION preprocessing (NEW)
+    output_file_regression = '../../data/processed/flight_delays_cleaned_regression.csv'
+    
+    df_clean_regression = preprocessing_pipeline_regression(
+        input_path=input_file,
+        output_path=output_file_regression,
+        remove_invalid=True,
+        handle_missing=True,
+        remove_dupes=True,
+        validate_dtypes=True,
+        handle_outliers_method='keep',
+        regression_cap_min=-60,
+        regression_cap_max=300,
+        date_range=None
+    )
+    
+    print("\n✓ Regression preprocessing complete!")

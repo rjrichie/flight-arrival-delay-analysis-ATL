@@ -162,6 +162,10 @@ def train_mlp_regressor(X_train, y_train, hidden_layer_sizes=(100, 50),
         validation_fraction=validation_fraction,
         n_iter_no_change=10  # Number of iterations with no improvement to wait before stopping
     )
+    # WE BALANCE THE IMBALANCED CLASS
+    classes = np.unique(y_train)
+    class_weights_array = compute_class_weight(class_weight='balanced', classes=classes, y=y_train)
+    sample_weights = class_weights_array[y_train.astype(int)]
     
     start_time = time.time()
     model.fit(X_train, y_train)

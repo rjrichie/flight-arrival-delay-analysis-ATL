@@ -1,2 +1,2 @@
 Total Rows (Raw),Total Rows (Clean),Rows Removed,Total Columns,Missing Values,Duplicate Rows,Tail Number Unknown,Memory (MB),Date Range Start,Date Range End,Unique Carriers,Unique Origin Airports,Delayed Flights (>15 min),On-time Flights (≤15 min)
-1527171,1527160,11,18,0,0,1068,448.5783929824829,2019-01-01 00:00:00,2025-07-31 00:00:00,11,173,232861,1294299
+1527171,1527160,11,18,0,0,1068,401.97176456451416,2019-01-01 00:00:00,2025-07-31 00:00:00,11,173,232861,1294299

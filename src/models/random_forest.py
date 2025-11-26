@@ -334,3 +334,84 @@ def load_model(filepath):
     """
     model = joblib.load(filepath)
     return model
+
+
+def train_and_evaluate_regressor(
+    df,
+    feature_cols,
+    target_col,
+    test_size=0.2,
+    random_state=42,
+    model_params=None,
+    save_path=None,
+    top_n_features=20,
+):
+    """
+    Convenience pipeline for Random Forest regression.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Full dataframe containing features and target
+    feature_cols : list
+        List of column names to use as features
+    target_col : str
+        Name of the target column (continuous)
+    test_size : float
+        Fraction of data used for testing
+    random_state : int
+        Random seed for reproducibility
+    model_params : dict or None
+        Additional parameters passed to `train_random_forest_regressor`
+    save_path : str or Path or None
+        If provided, saves trained model to this path
+    top_n_features : int
+        How many top features to return in importance DataFrame
+
+    Returns
+    -------
+    dict
+        Contains keys: model, metrics, feature_importances, X_train, X_test, y_train, y_test
+    """
+    if model_params is None:
+        model_params = {}
+
+    # Split data
+    X_train, X_test, y_train, y_test = prepare_data_for_modeling(
+        df=df,
+        feature_cols=feature_cols,
+        target_col=target_col,
+        test_size=test_size,
+        random_state=random_state,
+    )
+
+    # Train
+    model = train_random_forest_regressor(
+        X_train=X_train,
+        y_train=y_train,
+        random_state=random_state,
+        **model_params
+    )
+
+    # Evaluate
+    metrics = evaluate_regressor(model, X_train, y_train, X_test, y_test)
+
+    # Feature importance
+    try:
+        importance_df = get_feature_importance(model, feature_cols, top_n=top_n_features)
+    except Exception:
+        importance_df = pd.DataFrame({'Feature': feature_cols, 'Importance': np.zeros(len(feature_cols))})
+
+    # Save model if path provided
+    if save_path:
+        save_model(model, save_path)
+
+    return {
+        'model': model,
+        'metrics': metrics,
+        'feature_importances': importance_df,
+        'X_train': X_train,
+        'X_test': X_test,
+        'y_train': y_train,
+        'y_test': y_test,
+    }

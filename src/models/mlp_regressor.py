@@ -90,7 +90,7 @@ def scale_features(X_train, X_test):
 def train_mlp_regressor(X_train, y_train, hidden_layer_sizes=(100, 50), 
                         activation='relu', solver='adam', alpha=0.0001,
                         batch_size='auto', learning_rate='constant',
-                        learning_rate_init=0.001, max_iter=200,
+                        learning_rate_init=0.001, max_iter=150,
                         random_state=42, verbose=True, early_stopping=False,
                         validation_fraction=0.1):
     """
@@ -201,11 +201,11 @@ def tune_mlp_regressor_hyperparams(X_train, y_train, cv=3, n_jobs=-1, verbose=1)
     print("STARTING HYPERPARAMETER TUNING (MLP REGRESSOR)")
     print("Note: This may take several minutes...\n")
     
-    model = MLPRegressor(max_iter=300, random_state=42, early_stopping=True)
+    model = MLPRegressor(max_iter=300, random_state=42, early_stopping=True, n_iter_no_change=20)
     
     # Define parameter grid
     param_grid = {
-        'hidden_layer_sizes': [(50,), (100,), (100, 50), (100, 50, 25)],
+        'hidden_layer_sizes': [(32,), (50,), (32, 16), (50, 25)],
         'activation': ['relu', 'tanh'],
         'alpha': [0.0001, 0.001, 0.01],
         'learning_rate_init': [0.001, 0.01]

@@ -7,6 +7,7 @@ from sklearn.metrics import (
     classification_report, confusion_matrix, accuracy_score,
     precision_score, recall_score, f1_score, roc_auc_score
 )
+from sklearn.utils.class_weight import compute_class_weight
 import joblib
 from pathlib import Path
 import time
@@ -99,7 +100,7 @@ def scale_features(X_train, X_test):
 def train_mlp_classifier(X_train, y_train, hidden_layer_sizes=(100, 50),
                          activation='relu', solver='adam', alpha=0.0001,
                          batch_size='auto', learning_rate='constant',
-                         learning_rate_init=0.001, max_iter=200,
+                         learning_rate_init=0.001, max_iter=150,
                          random_state=42, verbose=True, early_stopping=False,
                          validation_fraction=0.1):
     """
@@ -171,9 +172,14 @@ def train_mlp_classifier(X_train, y_train, hidden_layer_sizes=(100, 50),
         validation_fraction=validation_fraction,
         n_iter_no_change=10  # Number of iterations with no improvement to wait before stopping
     )
-    
+
+    # WE BALANCE THE IMBALANCED CLASS
+    classes = np.unique(y_train)
+    class_weights_array = compute_class_weight(class_weight='balanced', classes=classes, y=y_train)
+    sample_weights = class_weights_array[y_train.astype(int)]
+
     start_time = time.time()
-    model.fit(X_train, y_train)
+    model.fit(X_train, y_train, sample_weight=sample_weights) # WE BALANCE THE IMBALANCED CLASS
     training_time = time.time() - start_time
     
     print(f"\n✓ Training complete in {training_time:.2f} seconds")
@@ -210,14 +216,14 @@ def tune_mlp_classifier_hyperparams(X_train, y_train, cv=3, n_jobs=-1, verbose=1
     print("STARTING HYPERPARAMETER TUNING (MLP CLASSIFIER)")
     print("Note: This may take several minutes...\n")
     
-    model = MLPClassifier(max_iter=300, random_state=42, early_stopping=True)
+    model = MLPClassifier(max_iter=300, random_state=42, early_stopping=True, n_iter_no_change=20)
     
     # Define parameter grid
     param_grid = {
-        'hidden_layer_sizes': [(50,), (100,), (100, 50), (100, 50, 25)],
-        'activation': ['relu', 'tanh'],
-        'alpha': [0.0001, 0.001, 0.01],
-        'learning_rate_init': [0.001, 0.01]
+        'hidden_layer_sizes': [(50,), (50, 100)],
+        'activation': ['relu'],
+        'alpha': [0.0001, 0.001],
+        'learning_rate_init': [0.001]
     }
     
     grid_search = GridSearchCV(
@@ -229,8 +235,15 @@ def tune_mlp_classifier_hyperparams(X_train, y_train, cv=3, n_jobs=-1, verbose=1
         verbose=verbose
     )
     
+    classes = np.unique(y_train)
+    class_weights_array = compute_class_weight(
+        class_weight='balanced',
+        classes=classes,
+        y=y_train
+    )
+    sample_weights = class_weights_array[y_train.astype(int)]
     start_time = time.time()
-    grid_search.fit(X_train, y_train)
+    grid_search.fit(X_train, y_train, sample_weight=sample_weights)
     tuning_time = time.time() - start_time
     
     print(f"\n✓ Hyperparameter tuning complete in {tuning_time:.2f} seconds")

@@ -1,0 +1,25 @@
+{
+  "regression_metrics": {
+    "MAE": 19.47957420349121,
+    "RMSE": 34.102823394501556,
+    "R2": 0.039846718311309814,
+    "Within_5min_%": 18.750925404957208,
+    "Within_15min_%": 57.05660352525821
+  },
+  "classification_metrics": {
+    "Accuracy": 0.611167133764635,
+    "Precision": 0.21618072592313015,
+    "Recall": 0.5903332474448166,
+    "F1_Score": 0.31646982986854527,
+    "ROC_AUC": 0.6418686202700922
+  },
+  "config": {
+    "classification_data_path": "../data/processed/flight_delays_engineered.csv",
+    "regression_data_path": "../data/processed/flight_delays_engineered_regression.csv",
+    "test_size": 0.2,
+    "random_state": 42,
+    "classification_threshold": 15,
+    "save_figures": true
+  },
+  "timestamp": "2025-11-22T23:03:16.196912"
+}

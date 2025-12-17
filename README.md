@@ -3,6 +3,9 @@
 ## Project Overview
 Machine learning project analyzing flight delays using data from the Bureau of Transportation Statistics. Implements multiple classification and regression models to predict flight delays and identify key contributing factors.
 
+## Final Report
+The final report can be accessed through [here](https://rjrichie.github.io/ml-flight-arrival-delay/).
+
 ## Project Structure
 
 ### Root Directory
